@@ -6,7 +6,6 @@
     "integration_type": "entity",
     "documentation": "https://github.com/home-assistant/example-custom-config/tree/master/custom_components/hello_world/",
     "iot_class": "assumed_state",
+    "issue_tracker": "https://github.com/lsarkar/ha-lsled/issues",
     "requirements": [],
-    "version": "0.1.1",
-    "config_flow": true
-  }
+    "version": "0.1.1"  }

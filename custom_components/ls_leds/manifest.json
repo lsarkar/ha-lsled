@@ -1,6 +1,6 @@
 {
-    "domain": "hello_state",
-    "name": "Hello State",
+    "domain": "ls_leds",
+    "name": "LS Leds",
     "codeowners": [],
     "dependencies": [],
     "integration_type": "entity",
@@ -8,4 +8,4 @@
     "iot_class": "assumed_state",
     "issue_tracker": "https://github.com/lsarkar/ha-lsled/issues",
     "requirements": [],
-    "version": "0.1.1"  }
+    "version": "0.1.2"  }

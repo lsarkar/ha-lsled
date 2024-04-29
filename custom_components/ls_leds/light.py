@@ -1,4 +1,5 @@
 """Platform for light integration."""
+
 from __future__ import annotations
 
 import logging
@@ -29,7 +30,7 @@ import binascii
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "hello_state"
+DOMAIN = "ls_leds"
 
 # Validation of the user's configuration
 # PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
@@ -40,7 +41,14 @@ DOMAIN = "hello_state"
 #    }
 # )
 
-#SUPPORTED_LIGHT_FEATURES = SUPPORT_EFFECT | SUPPORT_COLOR
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+    {
+        vol.Required(CONF_HOST): cv.string,
+        vol.Required("port", default=2522): cv.positive_int,
+    }
+)
+
+# SUPPORTED_LIGHT_FEATURES = SUPPORT_EFFECT | SUPPORT_COLOR
 SUPPORTED_LIGHT_FEATURES = SUPPORT_COLOR
 
 
@@ -55,9 +63,11 @@ def rgb(red: int, green: int, blue: int) -> str:
     return binascii.unhexlify(res)
 
 
-UDP_IP = "192.168.4.120"
-# UDP_IP = "192.168.4.173"
-UDP_PORT = 2522
+# UDP_IP = "192.168.4.120"
+# UDP_PORT = 2522
+
+UDP_IP = None
+UDP_PORT = None
 
 
 class UdpHandler:
@@ -71,14 +81,14 @@ class UdpHandler:
             socket.SOCK_DGRAM,
         )  # UDP
 
-        print("UDP target IP: %s" % UDP_IP)
-        print("UDP target port: %s" % UDP_PORT)
+        print("UDP target IP: %s" % self._ip)
+        print("UDP target port: %s" % self._port)
         print("message: %s" % message)
 
-        sock.sendto(message, (UDP_IP, UDP_PORT))
+        sock.sendto(message, (self._ip, self._port))
 
 
-#LIGHT_EFFECT_LIST = ["red", "green", "blue", "white"]
+# LIGHT_EFFECT_LIST = ["red", "green", "blue", "white"]
 
 
 class Ws281XLedStrip:
@@ -89,10 +99,15 @@ class Ws281XLedStrip:
         LOWER = 1
         UPPER = 2
 
-    def __init__(self, strip_index: StripIndex = StripIndex.ALL) -> None:
-        self._udp_handler = UdpHandler(UDP_IP, UDP_PORT)
+    def __init__(
+        self,
+        udp_ip: str,
+        udp_port: int,
+        strip_index: StripIndex = StripIndex.ALL,
+    ) -> None:
+        self._udp_handler = UdpHandler(udp_ip, udp_port)
         self._strip_index = strip_index
-        self._unique_id = f"ledstrip-{UDP_IP}:{UDP_PORT}-{self._strip_index}"
+        self._unique_id = f"ledstrip-{udp_ip}:{udp_port}-{self._strip_index}"
         self._color = self.rgb_byte_array(127, 127, 127)
 
     def turn_on(self):
@@ -128,14 +143,17 @@ class Ws281XLedStrip:
 
 def setup_platform(
     hass,
-    config,
+    config: ConfigType,
     add_entities,
     discovery_info=None,
 ) -> None:
-    """Set up the Awesome Light platform."""
+    """Set up the LS Led platform."""
     # Assign configuration variables.
     # The configuration check takes care they are present.
-    # host = config[CONF_HOST]
+    UDP_IP = config[CONF_HOST]
+    UDP_PORT = config["port"]
+
+    print(f"IP: {UDP_IP}")
     # username = config[CONF_USERNAME]
     # password = config.get(CONF_PASSWORD)
 
@@ -147,16 +165,22 @@ def setup_platform(
 
     # Add devices
     # add_entities(LightStrip(light) for light in hub.lights())
-    lower = LightStrip(Ws281XLedStrip(strip_index=Ws281XLedStrip.StripIndex.LOWER))
-    upper = LightStrip(Ws281XLedStrip(strip_index=Ws281XLedStrip.StripIndex.UPPER))
-    all = LightStrip(Ws281XLedStrip(strip_index=Ws281XLedStrip.StripIndex.ALL))
+    lower = LightStrip(
+        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.LOWER)
+    )
+    upper = LightStrip(
+        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.UPPER)
+    )
+    all = LightStrip(
+        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.ALL)
+    )
     add_entities([lower, upper, all])
 
 
 class LightStrip(LightEntity):
     """Representation of an Awesome Light."""
 
-    DEFAULT_ON_COLOR = (200, 200, 200)
+    DEFAULT_ON_COLOR = (0, 255, 0)
 
     def __init__(self, light) -> None:
         self._light = light

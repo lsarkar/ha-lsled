@@ -11,10 +11,8 @@ import voluptuous as vol
 # Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.light import (
-    ATTR_EFFECT,
     ATTR_RGB_COLOR,
     PLATFORM_SCHEMA,
-    SUPPORT_COLOR,
     ColorMode,
     LightEntity,
 )
@@ -33,23 +31,12 @@ _LOGGER = logging.getLogger(__name__)
 DOMAIN = "ls_leds"
 
 # Validation of the user's configuration
-# PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-#    {
-#        vol.Required(CONF_HOST): cv.string,
-#        vol.Optional(CONF_USERNAME, default="admin"): cv.string,
-#        vol.Optional(CONF_PASSWORD): cv.string,
-#    }
-# )
-
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_HOST): cv.string,
         vol.Required("port", default=2522): cv.positive_int,
     }
 )
-
-# SUPPORTED_LIGHT_FEATURES = SUPPORT_EFFECT | SUPPORT_COLOR
-SUPPORTED_LIGHT_FEATURES = SUPPORT_COLOR
 
 
 def rgb(red: int, green: int, blue: int) -> str:
@@ -62,9 +49,6 @@ def rgb(red: int, green: int, blue: int) -> str:
     res = binascii.hexlify(bytearray(rgb_packet))
     return binascii.unhexlify(res)
 
-
-# UDP_IP = "192.168.4.120"
-# UDP_PORT = 2522
 
 UDP_IP = None
 UDP_PORT = None
@@ -153,10 +137,6 @@ def setup_platform(
     UDP_IP = config[CONF_HOST]
     UDP_PORT = config["port"]
 
-    print(f"IP: {UDP_IP}")
-    # username = config[CONF_USERNAME]
-    # password = config.get(CONF_PASSWORD)
-
     # Setup connection with devices/cloud
     # hub = awesomelights.Hub(host, username, password)
     # lightstrips = []
@@ -226,10 +206,12 @@ class LightStrip(LightEntity):
         self._light.turn_off()
         self._state = False
 
+    """
     @property
     def supported_features(self):
-        """Return the flag supported features."""
+        # Return the flag supported features
         return SUPPORTED_LIGHT_FEATURES
+    """
 
     @property
     def supported_color_modes(self):

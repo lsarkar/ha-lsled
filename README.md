@@ -1,5 +1,5 @@
 ## LS LEDS
-Home Assistant Custom Component for integrating WS2812 LED Strips
+Home Assistant Custom Component for integrating WS2812 LED Strips with custom firmware that receives UDP commands
 
 ### Installation
 - Install through HACS (Home Assistant Community Store)

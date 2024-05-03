@@ -23,18 +23,20 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from enum import IntEnum
 
+from .const import DOMAIN
+from .const import CONF_PORT
+from .udp import UdpHandler
+
 import socket
 import binascii
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "ls_leds"
-
 # Validation of the user's configuration
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_HOST): cv.string,
-        vol.Required("port", default=2522): cv.positive_int,
+        vol.Required(CONF_PORT, default=2522): cv.positive_int,
     }
 )
 
@@ -49,31 +51,8 @@ def rgb(red: int, green: int, blue: int) -> str:
     res = binascii.hexlify(bytearray(rgb_packet))
     return binascii.unhexlify(res)
 
-
 UDP_IP = None
 UDP_PORT = None
-
-
-class UdpHandler:
-    def __init__(self, udp_ip: str, udp_port: int) -> None:
-        self._ip = udp_ip
-        self._port = udp_port
-
-    def send(self, message: str) -> None:
-        sock = socket.socket(
-            socket.AF_INET,  # Internet
-            socket.SOCK_DGRAM,
-        )  # UDP
-
-        print("UDP target IP: %s" % self._ip)
-        print("UDP target port: %s" % self._port)
-        print("message: %s" % message)
-
-        sock.sendto(message, (self._ip, self._port))
-
-
-# LIGHT_EFFECT_LIST = ["red", "green", "blue", "white"]
-
 
 class Ws281XLedStrip:
     class StripIndex(IntEnum):
@@ -135,10 +114,8 @@ def setup_platform(
     # Assign configuration variables.
     # The configuration check takes care they are present.
     UDP_IP = config[CONF_HOST]
-    UDP_PORT = config["port"]
+    UDP_PORT = config[CONF_PORT]
 
-    # Setup connection with devices/cloud
-    # hub = awesomelights.Hub(host, username, password)
     # lightstrips = []
     # lightstrips.append(Ws281XLedStrip(strip_index=Ws281XLedStrip.StripIndex.LOWER))
     # lightstrips.append(Ws281XLedStrip(strip_index=Ws281XLedStrip.StripIndex.UPPER))
@@ -158,7 +135,7 @@ def setup_platform(
 
 
 class LightStrip(LightEntity):
-    """Representation of an Awesome Light."""
+    """Representation of WS2812B UDP LED STRIP."""
 
     DEFAULT_ON_COLOR = (0, 255, 0)
 
@@ -174,6 +151,12 @@ class LightStrip(LightEntity):
     def name(self) -> str:
         """Return the display name of this light."""
         return self._name
+    
+    """
+    @property
+    def state(self) -> Optional[str]:
+        return self._state
+    """
 
     def get_color_mode(self):
         return ColorMode.RGB

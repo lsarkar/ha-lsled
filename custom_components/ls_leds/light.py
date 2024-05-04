@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from typing import Any
+from typing import Any, Dict
 
 import voluptuous as vol
 
@@ -51,8 +51,10 @@ def rgb(red: int, green: int, blue: int) -> str:
     res = binascii.hexlify(bytearray(rgb_packet))
     return binascii.unhexlify(res)
 
+
 UDP_IP = None
 UDP_PORT = None
+
 
 class Ws281XLedStrip:
     class StripIndex(IntEnum):
@@ -68,6 +70,7 @@ class Ws281XLedStrip:
         udp_port: int,
         strip_index: StripIndex = StripIndex.ALL,
     ) -> None:
+        self._ip = udp_ip
         self._udp_handler = UdpHandler(udp_ip, udp_port)
         self._strip_index = strip_index
         self._unique_id = f"ledstrip-{udp_ip}:{udp_port}-{self._strip_index}"
@@ -79,6 +82,9 @@ class Ws281XLedStrip:
     def turn_off(self):
         self._color = self.rgb_byte_array(0, 0, 0)
         self._udp_handler.send(self._color)
+
+    def ip(self):
+        return self._ip
 
     def set_rgb(self, red: int, green: int, blue: int):
         self._color = self.rgb_byte_array(red, green, blue)
@@ -134,6 +140,9 @@ def setup_platform(
     add_entities([lower, upper, all])
 
 
+ATTR_IP = "IP"
+
+
 class LightStrip(LightEntity):
     """Representation of WS2812B UDP LED STRIP."""
 
@@ -146,12 +155,13 @@ class LightStrip(LightEntity):
         self._attr_unique_id = light.unique_id()
         self.color_mode = ColorMode.RGB
         self._rgb_color = None
+        self.attrs: Dict[str, Any] = {ATTR_IP, self._light.ip()}
 
     @property
     def name(self) -> str:
         """Return the display name of this light."""
         return self._name
-    
+
     """
     @property
     def state(self) -> Optional[str]:
@@ -203,6 +213,10 @@ class LightStrip(LightEntity):
     @property
     def rgb_color(self):
         return self._rgb_color
+
+    @property
+    def device_state_attributes(self) -> Dict[str, Any]:
+        return self.attrs
 
     def set_rgb_color(self, rgb: tuple):
         self._rgb_color = rgb

@@ -24,7 +24,7 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from enum import IntEnum
 
 from .const import DOMAIN
-from .const import CONF_PORT
+from .const import CONF_PORT, DEFAULT_PORT
 from .udp import UdpHandler
 
 import socket
@@ -36,7 +36,7 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_HOST): cv.string,
-        vol.Required(CONF_PORT, default=2522): cv.positive_int,
+        vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.positive_int,
     }
 )
 

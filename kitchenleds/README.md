@@ -18,6 +18,8 @@ The Pi Pico W listens for UDP messages on port 2252
 ### Wiring
 LED Strips are connected to GP27 and GP28 on the Pi Pico
 
+The Level Converter is required as the GPIOs from the Pico output 3.3V and the WS2812 LED strips require 5V
+
 <b>Indexes</b>
 <p>
 0 - both strips

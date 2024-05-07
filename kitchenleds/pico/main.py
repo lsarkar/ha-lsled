@@ -65,20 +65,20 @@ def led_strips_off():
     lower_strip.off()
     time.sleep(1)
     
-def led_start_up():
+def led_start_up_sequence():
+    upper_strip.write_all(255, 0, 0)
+    lower_strip.write_all(255, 0, 0)
+    time.sleep(0.5)
     upper_strip.write_all(0, 0, 255)
     lower_strip.write_all(0, 255, 0)
-    time.sleep(0.3)
-    upper_strip.write_all(255, 0, 255)
-    lower_strip.write_all(255, 255, 0)
-    time.sleep(0.3)
-    upper_strip.write_all(255, 0, 0)
-    lower_strip.write_all(0, 255, 255)
-    time.sleep(0.3)
+    time.sleep(0.5)
+    upper_strip.write_all(0, 0, 255)
+    lower_strip.write_all(0, 0, 255)
+    time.sleep(0.5)
     
 
 led_strips_off()
-led_start_up()
+led_start_up_sequence()
 led_strips_off()
 
 wlan = network.WLAN(network.STA_IF)
@@ -96,8 +96,7 @@ wlan.connect(SSID, PWD)
 
 signal_strength = None
 
-# static IP address
-# ref: https://diyprojectslab.com/raspberry-pi-pico-w-with-a-static-ip-address/
+# static IP address ref: https://diyprojectslab.com/raspberry-pi-pico-w-with-a-static-ip-address/
 wlan.ifconfig((secrets['static_ip'], '255.255.255.0', secrets['gateway'], '8.8.8.8'))
 
 
@@ -113,7 +112,7 @@ while wait > 0:
     time.sleep(0.3)
     
 if wlan.status() != 3:
-    raise RuntimeError('wifi connection failed')
+    raise RuntimeError('WiFi connection failed')
     led.off()
 else:
     print('connected')
@@ -159,71 +158,120 @@ class DataPacket:
             8 bits red
             8 bits green
             8 bits blue
-            8 bits strip id (TODO: change to less bytes)
-                0x00 strip id 0
-                0x01 strip id 1
-                0xFF strip id all
+            4 bits command id
+                0x0 WRITE Command
+                0x1 READ Command
+                0x2 ID Command - TBD
+            4 bits strip id
+                0x0 strip id 0
+                0x1 strip id 1
+                0xF strip id all
     """
     
     def __init__(self, raw_input):
         self.raw_input = raw_input
-        self.r = self.raw_input[0] & 0xFF
-        self.g = self.raw_input[1] & 0xFF
-        self.b = self.raw_input[2] & 0xFF
-        self.led_strip_id = self.raw_input[3]
+        self._r = self.raw_input[0] & 0xFF
+        self._g = self.raw_input[1] & 0xFF
+        self._b = self.raw_input[2] & 0xFF
+        self._command = (self.raw_input[3] >> 4) & 0xF
+        self._led_strip_id = self.raw_input[3] & 0xF
     
     def strip_id(self):
-        return self.led_strip_id
+        return self._led_strip_id
     
     def red(self):
-        return self.r
+        return self._r
     
     def green(self):
-        return self.g
+        return self._g
     
     def blue(self):
-        return self.b
+        return self._b
+    
+    def command(self):
+        return self._command
     
     def color(self):
-        return (self.r, self.g, self.b)
+        return (self._r, self._g, self._b)
     
     def invert_color(self):
-        return (255 - self.r, 255 - self.g, 255 - self.b)
+        return (255 - self._r, 255 - self._g, 255 - self._b)
 
 
-def send(socket, udp_ip, udp_port):
-    MSG_TO_SEND = 'ACK'
-    socket.sendto(MSG_TO_SEND, (udp_ip, udp_port))
+MSG_TO_SEND = 'ACK'
+
+def send(socket, udp_ip, udp_port, msg_to_send=MSG_TO_SEND):
+    socket.sendto(msg_to_send, (udp_ip, udp_port))
+
+def write_to_strip(strip: PicoLedStrip, color: tuple):
+    strip.write_all(color[0], color[1], color[2])
+
+
+state_manager = {}
+state_manager[LOWER_STRIP_ID] = []
+state_manager[UPPER_STRIP_ID] = []
+
+def write_command(packet: DataPacket, strip: PicoLedStrip):
+    color = packet.color()
+
+    if packet.strip_id() == LOWER_STRIP_ID:
+        state_manager[LOWER_STRIP_ID] = color
+        write_to_strip(lower_strip, color)
+        print(state_manager[LOWER_STRIP_ID])
+    elif packet.strip_id() == UPPER_STRIP_ID:
+        write_to_strip(upper_strip, color)
+        state_manager[UPPER_STRIP_ID] = color
+        print(state_manager[UPPER_STRIP_ID])
+    elif packet.strip_id() == ALL_STRIP_ID:
+        write_to_strip(lower_strip, color)
+        write_to_strip(upper_strip, color)
+    else:
+        # unrecognized ID, log error
+        print("Did not recognize valid strip id")
+
+def read_command(packet: DataPacket):
+    if packet.strip_id() not in state_manager.keys():
+        print("Couldn't recognize valid strip id")
+        return
+    
+    return state_manager[packet.strip_id()]
 
 while True:
-
     print('Server listening..')
-    print("Send and a command to control leds")
+    print("Send a command to control leds")
 
     data, addr = s.recvfrom(4096)
     
     color = None
-    invert_color = None
     
     if data is not None:
-        p = DataPacket(data)
-        print(f'red: {p.red()} green: {p.green()} blue: {p.blue()} strip id: {p.strip_id()}')
+  
+        if len(data) != 4:
+            print(f"Couldn't recognise data: {data}")
+            break
+
+        ip_address = addr[0]
+        port = addr[1]
+
+        packet = DataPacket(data)
+
+        print(f'red: {packet.red()} green: {packet.green()} blue: {packet.blue()} command: {packet.command()} strip id: {packet.strip_id()}')
         print(f'received: {data} from {addr[0]}:{addr[1]}')
-        send(s, addr[0], addr[1])
-        color = p.color()
-        #invert_color = p.invert_color()
-        invert_color = p.color()
-    
-    if p.strip_id() == LOWER_STRIP_ID:
-        lower_strip.write_all(invert_color[0], invert_color[1], invert_color[2])
-    elif p.strip_id() == UPPER_STRIP_ID:
-        upper_strip.write_all(color[0], color[1], color[2])
-    elif p.strip_id() == ALL_STRIP_ID:
-        upper_strip.write_all(color[0], color[1], color[2])
-        lower_strip.write_all(invert_color[0], invert_color[1], invert_color[2])
-    else:
-        # unrecognized ID, log error
-        print("Did not recognize valid strip id")
+
+        # handle write command
+        if packet.command() == 0:
+            print("WRITE COMMAND")
+            write_command(packet, packet.strip_id())
+            send(s, ip_address, port)
+        # handle read command
+        elif packet.command() == 1:
+            print(f"READ COMMAND")
+            state = read_command(packet)
+            print(state)
+            send(s, ip_address, port, msg_to_send=bytearray(state))
+        else:
+            print("Unrecognized command")
+
     
 
     time.sleep(0.001)

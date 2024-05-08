@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-
+from datetime import timedelta
 from typing import Any, Dict
 
 import voluptuous as vol
@@ -110,10 +110,10 @@ class Ws281XLedStrip:
         return f"WS281X LED Strip[{self._strip_index}]"
 
 
-def setup_platform(
+async def async_setup_platform(
     hass,
     config: ConfigType,
-    add_entities,
+    async_add_entities,
     discovery_info=None,
 ) -> None:
     """Set up the LS Led platform."""
@@ -134,13 +134,13 @@ def setup_platform(
     upper = LightStrip(
         Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.UPPER)
     )
-    all = LightStrip(
-        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.ALL)
-    )
-    add_entities([lower, upper, all])
+
+    async_add_entities([lower, upper])
 
 
 ATTR_IP = "IP"
+
+SCAN_INTERVAL = timedelta(minutes=10)
 
 
 class LightStrip(LightEntity):
@@ -225,7 +225,7 @@ class LightStrip(LightEntity):
     def get_rgb_color(self):
         return self._rgb_color
 
-    def update(self) -> None:
+    async def async_update(self) -> None:
         pass
         """Fetch new state data for this light.
 

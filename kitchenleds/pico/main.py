@@ -208,8 +208,8 @@ def write_to_strip(strip: PicoLedStrip, color: tuple):
 
 
 state_manager = {}
-state_manager[LOWER_STRIP_ID] = []
-state_manager[UPPER_STRIP_ID] = []
+state_manager[LOWER_STRIP_ID] = (0, 0, 0)
+state_manager[UPPER_STRIP_ID] = (0, 0, 0)
 
 def write_command(packet: DataPacket, strip: PicoLedStrip):
     color = packet.color()
@@ -236,18 +236,19 @@ def read_command(packet: DataPacket):
     
     return state_manager[packet.strip_id()]
 
+WRITE_COMMAND = 0
+READ_COMMAND = 1
+
 while True:
     print('Server listening..')
     print("Send a command to control leds")
 
     data, addr = s.recvfrom(4096)
-    
-    color = None
-    
+
     if data is not None:
   
         if len(data) != 4:
-            print(f"Couldn't recognise data: {data}")
+            print(f"Couldn't recognise data packet: {data}, expected 4 bytes")
             break
 
         ip_address = addr[0]
@@ -259,15 +260,14 @@ while True:
         print(f'received: {data} from {addr[0]}:{addr[1]}')
 
         # handle write command
-        if packet.command() == 0:
-            print("WRITE COMMAND")
+        if packet.command() == WRITE_COMMAND:
             write_command(packet, packet.strip_id())
+            print("WRITE COMMAND")
             send(s, ip_address, port)
         # handle read command
-        elif packet.command() == 1:
-            print(f"READ COMMAND")
+        elif packet.command() == READ_COMMAND:
             state = read_command(packet)
-            print(state)
+            print(f"READ COMMAND {state}")
             send(s, ip_address, port, msg_to_send=bytearray(state))
         else:
             print("Unrecognized command")

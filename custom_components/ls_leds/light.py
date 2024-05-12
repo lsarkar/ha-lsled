@@ -55,6 +55,8 @@ def rgb(red: int, green: int, blue: int) -> str:
 UDP_IP = None
 UDP_PORT = None
 
+SCAN_INTERVAL = timedelta(minutes=10)
+
 
 class Ws281XLedStrip:
     class StripIndex(IntEnum):
@@ -75,23 +77,35 @@ class Ws281XLedStrip:
         self._strip_index = strip_index
         self._unique_id = f"ledstrip-{udp_ip}:{udp_port}-{self._strip_index}"
         self._color = self.rgb_byte_array(127, 127, 127)
+        self._is_on = True
 
     def turn_on(self):
-        self._udp_handler.send(self._color)
+        self._is_on = True
+        self._send(self._color)
 
     def turn_off(self):
         self._color = self.rgb_byte_array(0, 0, 0)
-        self._udp_handler.send(self._color)
+        self._is_on = False
+        self._send(self._color)
+
+    def is_strip_on(self) -> bool:
+        return self._is_on
 
     def ip(self):
         return self._ip
 
-    def set_rgb(self, red: int, green: int, blue: int):
+    def set_rgb(self, red: int, green: int, blue: int) -> None:
         self._color = self.rgb_byte_array(red, green, blue)
         print(self._color)
-        self._udp_handler.send(self._color)
+        self._send(self._color)
 
-    def unique_id(self):
+    def _send(self, color: str) -> None:
+        self._udp_handler.send(color)
+
+    def get_rgb(self):
+        return self._color
+
+    def unique_id(self) -> str:
         return self._unique_id
 
     def rgb_byte_array(self, red: int, green: int, blue: int) -> str:
@@ -140,7 +154,9 @@ async def async_setup_platform(
 
 ATTR_IP = "IP"
 
-SCAN_INTERVAL = timedelta(minutes=10)
+
+# https://developers.home-assistant.io/docs/integration_fetching_data
+SCAN_INTERVAL = timedelta(seconds=30)
 
 
 class LightStrip(LightEntity):
@@ -191,13 +207,13 @@ class LightStrip(LightEntity):
 
         self._light.set_rgb(self._rgb_color[0], self._rgb_color[1], self._rgb_color[2])
         self._light.turn_on()
-        self._state = True
+        # self._state = True
 
     def turn_off(self, **kwargs: Any) -> None:
         """Instruct the light to turn off."""
         self._rgb_color = (0, 0, 0)
         self._light.turn_off()
-        self._state = False
+        # self._state = False
 
     """
     @property
@@ -218,6 +234,11 @@ class LightStrip(LightEntity):
     def device_state_attributes(self) -> Dict[str, Any]:
         return self.attrs
 
+    @property
+    def is_on(self) -> bool | None:
+        """Return true if light is on"""
+        return self._state
+
     def set_rgb_color(self, rgb: tuple):
         self._rgb_color = rgb
         self._light.set_rgb(self._rgb_color[0], self._rgb_color[1], self._rgb_color[2])
@@ -226,11 +247,16 @@ class LightStrip(LightEntity):
         return self._rgb_color
 
     async def async_update(self) -> None:
-        pass
         """Fetch new state data for this light.
 
         This is the only method that should fetch new data for Home Assistant.
         """
+        try:
+            # self._rgb_color = self._light.get_rgb()
+            self._state = self._light.is_strip_on()
+            print(f"Update {self._rgb_color}     {self._state}")
+        except:
+            _LOGGER.error("Unable to retrieve state from light")
         # self._light.update()
         # self._state = self._light.is_on()
         # self._brightness = self._light.brightness

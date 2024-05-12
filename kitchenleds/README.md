@@ -47,4 +47,11 @@ The Level Converter is required as the GPIOs from the Pico output 3.3V and the W
 
 
 
+### TODOs
+- Add config flow using reference thread: https://community.home-assistant.io/t/custom-integration-error-creating-device-with-entities/635842/8
+- Add custom read commands with UDP packet payload
+
+
+
+
 

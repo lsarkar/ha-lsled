@@ -21,3 +21,8 @@ light:
 
 ip address - static IP address of the WS2812B light strip
 port - The default port is **2522**
+
+
+### TODOs
+- Add config flow using reference thread: https://community.home-assistant.io/t/custom-integration-error-creating-device-with-entities/635842/8
+- Add custom read commands with UDP packet payload

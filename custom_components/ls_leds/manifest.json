@@ -3,9 +3,9 @@
     "name": "LS Leds",
     "codeowners": [],
     "dependencies": [],
-    "integration_type": "entity",
-    "documentation": "https://github.com/home-assistant/example-custom-config/tree/master/custom_components/hello_world/",
-    "iot_class": "assumed_state",
+    "integration_type": "hub",
+    "documentation": "https://github.com/lsarkar/ha-lsled",
+    "iot_class": "local_polling",
     "issue_tracker": "https://github.com/lsarkar/ha-lsled/issues",
     "requirements": [],
-    "version": "0.1.2"  }
+    "version": "0.1.3"  }

@@ -193,11 +193,7 @@ class LightStrip(LightEntity):
     #    return self._state
 
     def turn_on(self, **kwargs: Any) -> None:
-        """Instruct the light to turn on.
-
-        You can skip the brightness part if your light does not support
-        brightness control.
-        """
+        """Instruct the light to turn on."""
 
         _rgb = kwargs.get(ATTR_RGB_COLOR)
         self._rgb_color = _rgb

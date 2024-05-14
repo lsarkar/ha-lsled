@@ -135,9 +135,6 @@ def get_html(html_name):
         
     return html
 
-# HTTP server with socket
-#addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
-
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 s.bind(("", PORT))
@@ -147,13 +144,6 @@ class DataPacket:
     
     """
     payload:
-        header:
-            version: 4 bits
-            command type: 2 bits
-                - 0: reserved
-                - 1: reserved
-                - 2: reserved
-                - 3: reserved
         packet:
             8 bits red
             8 bits green
@@ -165,7 +155,7 @@ class DataPacket:
             4 bits strip id
                 0x0 strip id 0
                 0x1 strip id 1
-                0xF strip id all
+                0xF strip id 2 (ALL) (deprecated)
     """
     
     def __init__(self, raw_input):

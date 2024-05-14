@@ -1,3 +1,9 @@
+## Run Tests
+```
+python -m pytest
+```
+
+
 ## References
 
 - https://github.com/lukevink/hass-config-lajv/blob/master/custom_components/spotcast/sensor.py

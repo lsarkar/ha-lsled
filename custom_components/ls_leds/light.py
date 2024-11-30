@@ -20,6 +20,8 @@ from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+from homeassistant.config_entries import ConfigEntry
+
 
 from enum import IntEnum
 
@@ -35,7 +37,7 @@ _LOGGER = logging.getLogger(__name__)
 # Validation of the user's configuration
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        vol.Required(CONF_HOST): cv.string,
+        vol.Required(CONF_HOST, default="192.168.4.120"): cv.string,
         vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.positive_int,
     }
 )
@@ -124,22 +126,39 @@ class Ws281XLedStrip:
         return f"WS281X LED Strip[{self._strip_index}]"
 
 
+"""
 async def async_setup_platform(
     hass,
     config: ConfigType,
     async_add_entities,
     discovery_info=None,
 ) -> None:
-    """Set up the LS Led platform."""
+    #Set up the LS Led platform
     # Assign configuration variables.
     # The configuration check takes care they are present.
     UDP_IP = config[CONF_HOST]
     UDP_PORT = config[CONF_PORT]
 
+    _LOGGER.info(f"Got IP ADDRESS {UDP_IP}:{UDP_PORT}")
+
     # lightstrips = []
     # lightstrips.append(Ws281XLedStrip(strip_index=Ws281XLedStrip.StripIndex.LOWER))
     # lightstrips.append(Ws281XLedStrip(strip_index=Ws281XLedStrip.StripIndex.UPPER))
 
+    # Add devices
+    # add_entities(LightStrip(light) for light in hub.lights())
+    lower = LightStrip(
+        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.LOWER)
+    )
+    upper = LightStrip(
+        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.UPPER)
+    )
+
+    async_add_entities([lower, upper])
+"""
+
+
+async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
     # Add devices
     # add_entities(LightStrip(light) for light in hub.lights())
     lower = LightStrip(

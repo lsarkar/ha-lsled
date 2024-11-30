@@ -1,7 +1,9 @@
 {
     "domain": "ls_leds",
-    "name": "LS Leds",
+    "name": "LS Leds Tester",
     "codeowners": [],
+    "config_flow": true,
+    "single_config_entry": false,
     "dependencies": [],
     "integration_type": "hub",
     "documentation": "https://github.com/lsarkar/ha-lsled",

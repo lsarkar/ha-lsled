@@ -1,5 +1,6 @@
 import socket
 
+
 class UdpHandler:
     def __init__(self, udp_ip: str, udp_port: int) -> None:
         self._ip = udp_ip
@@ -11,8 +12,7 @@ class UdpHandler:
             socket.SOCK_DGRAM,
         )  # UDP
 
-        print("UDP target IP: %s" % self._ip)
-        print("UDP target port: %s" % self._port)
+        print(f"UDP target {self._ip}:{self._port}")
         print("message: %s" % message)
 
         sock.sendto(message, (self._ip, self._port))

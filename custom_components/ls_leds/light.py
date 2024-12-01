@@ -8,7 +8,6 @@ from typing import Any, Dict
 
 import voluptuous as vol
 
-# Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.light import (
     ATTR_RGB_COLOR,
@@ -16,11 +15,11 @@ from homeassistant.components.light import (
     ColorMode,
     LightEntity,
 )
-from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
+from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import STATE_ON, STATE_OFF
 
 
 from enum import IntEnum
@@ -29,7 +28,6 @@ from .const import DOMAIN
 from .const import CONF_PORT, DEFAULT_PORT
 from .udp import UdpHandler
 
-import socket
 import binascii
 
 _LOGGER = logging.getLogger(__name__)
@@ -123,12 +121,13 @@ class Ws281XLedStrip:
 
     @property
     def name(self) -> str:
-        return f"CHIPPA LED Strip[{self._strip_index}]"
+        return f"chipha-led-strip[{self._strip_index}]"
 
 
-async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
-    # Add devices
-    # add_entities(LightStrip(light) for light in hub.lights())
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+):
+    # add all chipha light entities
     lower = LightStrip(
         Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.LOWER)
     )
@@ -155,15 +154,20 @@ class LightStrip(LightEntity):
         self._light = light
         self._name = light.name
         self._state = None
-        self._attr_unique_id = light.unique_id()
+        self._unique_id = light.unique_id()
         self.color_mode = ColorMode.RGB
         self._rgb_color = None
+        self._icon = "mdi:lightbulb"
         self.attrs: Dict[str, Any] = {ATTR_IP, self._light.ip()}
 
     @property
     def name(self) -> str:
         """Return the display name of this light."""
         return self._name
+
+    @property
+    def state(self):
+        return self._state
 
     """
     @property
@@ -181,7 +185,7 @@ class LightStrip(LightEntity):
 
     def turn_on(self, **kwargs: Any) -> None:
         """Instruct the light to turn on."""
-
+        self._state = STATE_ON
         _rgb = kwargs.get(ATTR_RGB_COLOR)
         self._rgb_color = _rgb
 
@@ -190,13 +194,12 @@ class LightStrip(LightEntity):
 
         self._light.set_rgb(self._rgb_color[0], self._rgb_color[1], self._rgb_color[2])
         self._light.turn_on()
-        # self._state = True
 
     def turn_off(self, **kwargs: Any) -> None:
+        self._state = STATE_OFF
         """Instruct the light to turn off."""
         self._rgb_color = (0, 0, 0)
         self._light.turn_off()
-        # self._state = False
 
     """
     @property
@@ -214,12 +217,19 @@ class LightStrip(LightEntity):
         return self._rgb_color
 
     @property
+    def icon(self):
+        if self._icon:
+            return "mdi:lightbulb-on"
+
+        return "mdi:lightbulb-off"
+
+    @property
     def device_state_attributes(self) -> Dict[str, Any]:
         return self.attrs
 
     @property
     def is_on(self) -> bool | None:
-        """Return true if light is on"""
+        """Return true if light is on."""
         return self._state
 
     def set_rgb_color(self, rgb: tuple):
@@ -229,6 +239,10 @@ class LightStrip(LightEntity):
     def get_rgb_color(self):
         return self._rgb_color
 
+    @property
+    def unique_id(self):
+        return self._unique_id
+
     async def async_update(self) -> None:
         """Fetch new state data for this light.
 
@@ -236,8 +250,8 @@ class LightStrip(LightEntity):
         """
         try:
             # self._rgb_color = self._light.get_rgb()
-            self._state = self._light.is_strip_on()
-            print(f"Update {self._rgb_color}     {self._state}")
+            self._state = STATE_ON if self._light.is_strip_on() else STATE_OFF
+            print(f"Update {self._rgb_color}:{self._state}")
         except:
             _LOGGER.error("Unable to retrieve state from light")
         # self._light.update()

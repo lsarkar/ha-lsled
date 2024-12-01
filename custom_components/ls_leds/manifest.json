@@ -1,6 +1,6 @@
 {
     "domain": "ls_leds",
-    "name": "CHIPPA LEDS",
+    "name": "CHIPHA",
     "codeowners": [],
     "config_flow": true,
     "single_config_entry": false,

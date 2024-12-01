@@ -4,10 +4,8 @@ import voluptuous as vol
 from collections import OrderedDict
 import logging
 from typing import Any
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 import re
 from homeassistant.data_entry_flow import section
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,8 +53,6 @@ class LSLightsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="user", data_schema=vol.Schema(data_schema), errors=errors
             )
 
-        _LOGGER.info("Create entry")
-
         ip_address = user_input.get("ip_config", {}).get("ip_address", "127.0.0.1")
 
         if not self.validate_ip(ip_address):
@@ -64,5 +60,7 @@ class LSLightsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(
                 step_id="user", data_schema=vol.Schema(data_schema), errors=errors
             )
+
+        _LOGGER.info("Create entry")
 
         return self.async_create_entry(title="CHIPPA", data={"ip_address": ip_address})

@@ -16,5 +16,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
-    await hass.config_entries.async_forward_entry_setup(config, "light")
+    platforms = ["light"]
+    await hass.config_entries.async_forward_entry_setups(config, platforms)
     return True

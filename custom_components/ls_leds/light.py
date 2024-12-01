@@ -54,8 +54,8 @@ def rgb(red: int, green: int, blue: int) -> str:
     return binascii.unhexlify(res)
 
 
-UDP_IP = None
-UDP_PORT = None
+UDP_IP = "192.168.4.120"
+UDP_PORT = DEFAULT_PORT
 
 SCAN_INTERVAL = timedelta(minutes=10)
 
@@ -123,39 +123,7 @@ class Ws281XLedStrip:
 
     @property
     def name(self) -> str:
-        return f"WS281X LED Strip[{self._strip_index}]"
-
-
-"""
-async def async_setup_platform(
-    hass,
-    config: ConfigType,
-    async_add_entities,
-    discovery_info=None,
-) -> None:
-    #Set up the LS Led platform
-    # Assign configuration variables.
-    # The configuration check takes care they are present.
-    UDP_IP = config[CONF_HOST]
-    UDP_PORT = config[CONF_PORT]
-
-    _LOGGER.info(f"Got IP ADDRESS {UDP_IP}:{UDP_PORT}")
-
-    # lightstrips = []
-    # lightstrips.append(Ws281XLedStrip(strip_index=Ws281XLedStrip.StripIndex.LOWER))
-    # lightstrips.append(Ws281XLedStrip(strip_index=Ws281XLedStrip.StripIndex.UPPER))
-
-    # Add devices
-    # add_entities(LightStrip(light) for light in hub.lights())
-    lower = LightStrip(
-        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.LOWER)
-    )
-    upper = LightStrip(
-        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.UPPER)
-    )
-
-    async_add_entities([lower, upper])
-"""
+        return f"CHIPPA LED Strip[{self._strip_index}]"
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):

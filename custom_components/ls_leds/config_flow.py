@@ -13,10 +13,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class LSLightsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Example config flow."""
-
-    # The schema version of the entries that it creates
-    # Home Assistant will call your migrate method if the version changes
     VERSION = 1
     MINOR_VERSION = 1
 
@@ -44,13 +40,12 @@ class LSLightsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return False
 
     async def async_step_user(self, user_input: dict[str, Any]):
-        data_schema = OrderedDict()
-        data_schema[vol.Required("ip_address", default="127.0.0.1")] = str
-
-        data_schema["IP Config"] = section(
-            vol.Schema({vol.Required("ip_address", default="127.0.0.1"): str}),
-            {"collapsed": False},
-        )
+        data_schema = {
+            "ip_config": section(
+                vol.Schema({vol.Required("ip_address", default="127.0.0.1"): str}),
+                {"collapsed": False},
+            )
+        }
 
         errors = {}
         _LOGGER.info("Show user form")
@@ -62,7 +57,7 @@ class LSLightsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         _LOGGER.info("Create entry")
 
-        ip_address = user_input["ip_address"]
+        ip_address = user_input.get("ip_config", {}).get("ip_address", "127.0.0.1")
 
         if not self.validate_ip(ip_address):
             errors["ip_address"] = "Invalid IP Address"

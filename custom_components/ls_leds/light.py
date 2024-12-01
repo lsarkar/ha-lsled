@@ -20,6 +20,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON, STATE_OFF
+from homeassistant.components.light import SUPPORT_COLOR
 
 
 from enum import IntEnum
@@ -121,7 +122,7 @@ class Ws281XLedStrip:
 
     @property
     def name(self) -> str:
-        return f"chipha-led-strip[{self._strip_index}]"
+        return f"chipha-led-strip-{self._strip_index}"
 
 
 async def async_setup_entry(
@@ -146,19 +147,19 @@ SCAN_INTERVAL = timedelta(seconds=30)
 
 
 class LightStrip(LightEntity):
-    """Representation of WS2812B UDP LED STRIP."""
+    """Representation of CHIPHA LED STRIP."""
 
     DEFAULT_ON_COLOR = (0, 255, 0)
 
     def __init__(self, light) -> None:
         self._light = light
         self._name = light.name
-        self._state = None
+        self._state = STATE_OFF
         self._unique_id = light.unique_id()
         self.color_mode = ColorMode.RGB
         self._rgb_color = None
         self._icon = "mdi:lightbulb"
-        self.attrs: Dict[str, Any] = {ATTR_IP, self._light.ip()}
+        self.attrs: dict[str, Any] = {ATTR_IP, self._light.ip()}
 
     @property
     def name(self) -> str:
@@ -167,15 +168,16 @@ class LightStrip(LightEntity):
 
     @property
     def state(self):
+        "Return the state of the light."
         return self._state
 
-    """
     @property
-    def state(self) -> Optional[str]:
-        return self._state
-    """
+    def supported_features(self):
+        """Return the supported features of this light."""
+        return SUPPORT_COLOR
 
     def get_color_mode(self):
+        """Return the supported color mode."""
         return ColorMode.RGB
 
     # @property
@@ -196,36 +198,33 @@ class LightStrip(LightEntity):
         self._light.turn_on()
 
     def turn_off(self, **kwargs: Any) -> None:
-        self._state = STATE_OFF
         """Instruct the light to turn off."""
+        self._state = STATE_OFF
         self._rgb_color = (0, 0, 0)
         self._light.turn_off()
 
-    """
-    @property
-    def supported_features(self):
-        # Return the flag supported features
-        return SUPPORTED_LIGHT_FEATURES
-    """
-
     @property
     def supported_color_modes(self):
+        """Return supported color modes."""
         return [ColorMode.RGB]
 
     @property
     def rgb_color(self):
+        """Return the rgb color of the light."""
         return self._rgb_color
 
     @property
     def icon(self):
-        if self._icon:
+        """Return the icon of the light based on the state."""
+        if self._state == STATE_ON:
             return "mdi:lightbulb-on"
 
         return "mdi:lightbulb-off"
 
     @property
-    def device_state_attributes(self) -> Dict[str, Any]:
-        return self.attrs
+    def extra_state_attributes(self):
+        """Return the custom attributes of the light."""
+        return {"identifier": self._light.ip()}
 
     @property
     def is_on(self) -> bool | None:
@@ -251,7 +250,7 @@ class LightStrip(LightEntity):
         try:
             # self._rgb_color = self._light.get_rgb()
             self._state = STATE_ON if self._light.is_strip_on() else STATE_OFF
-            print(f"Update {self._rgb_color}:{self._state}")
+            _LOGGER.info(f"Update {self._rgb_color}:{self._state}")
         except:
             _LOGGER.error("Unable to retrieve state from light")
         # self._light.update()

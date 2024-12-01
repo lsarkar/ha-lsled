@@ -1,4 +1,5 @@
 import socket
+import re
 
 
 class UdpHandler:
@@ -16,3 +17,26 @@ class UdpHandler:
         print("message: %s" % message)
 
         sock.sendto(message, (self._ip, self._port))
+
+    @staticmethod
+    def validate_ipv4(ip: str):
+        pattern = re.compile(
+            r"^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+        )
+        return bool(pattern.match(ip))
+
+    @staticmethod
+    def validate_ipv6(ip: str):
+        pattern = re.compile(
+            r"^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,7}:$|^::([0-9a-fA-F]{1,4}:){0,7}[0-9a-fA-F]{1,4}$"
+        )
+        return bool(pattern.match(ip))
+
+    @staticmethod
+    def validate_ip(ip: str):
+        if UdpHandler.validate_ipv4(ip):
+            return True
+        elif UdpHandler.validate_ipv6(ip):
+            return True
+        else:
+            return False

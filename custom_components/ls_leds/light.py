@@ -22,7 +22,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON, STATE_OFF
 from homeassistant.components.light import SUPPORT_COLOR
 
-
 from enum import IntEnum
 
 from .const import DOMAIN
@@ -180,9 +179,9 @@ class LightStrip(LightEntity):
         return self._state
 
     @property
-    def supported_features(self):
-        """Return the supported features of this light."""
-        return SUPPORT_COLOR
+    def supported_color_modes(self):
+        """Return the supported colors of this light."""
+        return ColorMode.RGB
 
     @property
     def brightness(self):

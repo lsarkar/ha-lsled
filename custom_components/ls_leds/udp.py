@@ -1,5 +1,6 @@
 import socket
 import re
+import asyncio
 
 
 class UdpHandler:
@@ -17,6 +18,20 @@ class UdpHandler:
         print("message: %s" % message)
 
         sock.sendto(message, (self._ip, self._port))
+
+    async def send_async(self, message: str):
+        # Get the event loop
+        loop = asyncio.get_event_loop()
+
+        # Create a Datagram endpoint
+        transport, protocol = await loop.create_datagram_endpoint(
+            asyncio.DatagramProtocol, remote_addr=(self._ip, self._port)
+        )
+
+        transport.sendto(message)
+        print("message: %s" % message)
+
+        transport.close()
 
     @staticmethod
     def validate_ipv4(ip: str):

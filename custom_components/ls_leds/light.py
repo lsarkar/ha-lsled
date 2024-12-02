@@ -84,6 +84,10 @@ class Ws281XLedStrip:
         self._is_on = True
         self._send(self._color)
 
+    async def async_turn_on(self):
+        self._is_on = True
+        await self._send_async(self._color)
+
     def turn_off(self):
         self._color = self.rgb_byte_array(0, 0, 0)
         self._is_on = False
@@ -102,6 +106,9 @@ class Ws281XLedStrip:
 
     def _send(self, color: str) -> None:
         self._udp_handler.send(color)
+
+    async def _send_async(self, color: str) -> None:
+        await self._udp_handler.send_async(color)
 
     def get_rgb(self):
         return self._color
@@ -155,6 +162,7 @@ class LightStrip(LightEntity):
         self._light = light
         self._name = light.name
         self._state = STATE_OFF
+        self._brightness = 0
         self._unique_id = light.unique_id()
         self.color_mode = ColorMode.RGB
         self._rgb_color = None
@@ -176,6 +184,11 @@ class LightStrip(LightEntity):
         """Return the supported features of this light."""
         return SUPPORT_COLOR
 
+    @property
+    def brightness(self):
+        """Return the brightness of this light."""
+        return self._brightness
+
     def get_color_mode(self):
         """Return the supported color mode."""
         return ColorMode.RGB
@@ -185,21 +198,24 @@ class LightStrip(LightEntity):
     #    """Return true if light is on."""
     #    return self._state
 
-    def turn_on(self, **kwargs: Any) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Instruct the light to turn on."""
+        _LOGGER.info("turn on light: " + self._unique_id)
         self._state = STATE_ON
         _rgb = kwargs.get(ATTR_RGB_COLOR)
         self._rgb_color = _rgb
+        self._brightness = kwargs.get("brightness", 255)
 
         if self._rgb_color is None:
             self._rgb_color = self.DEFAULT_ON_COLOR
 
         self._light.set_rgb(self._rgb_color[0], self._rgb_color[1], self._rgb_color[2])
-        self._light.turn_on()
+        await self._light.async_turn_on()
 
     def turn_off(self, **kwargs: Any) -> None:
         """Instruct the light to turn off."""
         self._state = STATE_OFF
+        self._brightness = 0
         self._rgb_color = (0, 0, 0)
         self._light.turn_off()
 

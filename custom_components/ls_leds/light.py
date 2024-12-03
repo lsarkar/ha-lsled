@@ -92,6 +92,11 @@ class Ws281XLedStrip:
         self._is_on = False
         self._send(self._color)
 
+    async def async_turn_off(self):
+        self._is_on = False
+        self._color = self.rgb_byte_array(0, 0, 0)
+        await self._send_async(self._color)
+
     def is_strip_on(self) -> bool:
         return self._is_on
 
@@ -199,7 +204,7 @@ class LightStrip(LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Instruct the light to turn on."""
-        _LOGGER.info("turn on light: " + self._unique_id)
+        _LOGGER.info("turn on light")
         self._state = STATE_ON
         _rgb = kwargs.get(ATTR_RGB_COLOR)
         self._rgb_color = _rgb
@@ -211,12 +216,21 @@ class LightStrip(LightEntity):
         self._light.set_rgb(self._rgb_color[0], self._rgb_color[1], self._rgb_color[2])
         await self._light.async_turn_on()
 
-    def turn_off(self, **kwargs: Any) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Instruct the light to turn off."""
         self._state = STATE_OFF
         self._brightness = 0
         self._rgb_color = (0, 0, 0)
+        await self._light.async_turn_off()
+
+    """
+    def turn_off(self, **kwargs: Any) -> None:
+        #Instruct the light to turn off.
+        self._state = STATE_OFF
+        self._brightness = 0
+        self._rgb_color = (0, 0, 0)
         self._light.turn_off()
+    """
 
     @property
     def supported_color_modes(self):

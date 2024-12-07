@@ -1,16 +1,17 @@
-from homeassistant import config_entries
-from .const import DOMAIN
-import voluptuous as vol
-from collections import OrderedDict
 import logging
 from typing import Any
-from homeassistant.data_entry_flow import section
+
+import voluptuous as vol
+
+from homeassistant.config_entries import ConfigFlow
+
+from .const import DEFAULT_IP, DEFAULT_PORT, DOMAIN
 from .udp import UdpHandler
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class LSLightsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class LSLightsConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
     MINOR_VERSION = 1
 
@@ -19,10 +20,10 @@ class LSLightsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input: dict[str, Any]):
         data_schema = {
-            "ip_config": section(
-                vol.Schema({vol.Required("ip_address", default="127.0.0.1"): str}),
-                {"collapsed": False},
-            )
+            vol.Required("ip_address", default=DEFAULT_IP): str,
+            vol.Required("ip_port", default=DEFAULT_PORT): vol.All(
+                int, vol.Range(min=1024, max=65535)
+            ),
         }
 
         errors = {}
@@ -33,15 +34,20 @@ class LSLightsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="user", data_schema=vol.Schema(data_schema), errors=errors
             )
 
-        ip_address = user_input.get("ip_config", {}).get("ip_address", "127.0.0.1")
+        ip_address = user_input.get("ip_address")
+        ip_port = user_input.get("ip_port")
 
         _LOGGER.info("Perform IP address validation")
         if not UdpHandler.validate_ip(ip_address):
-            errors["ip_address"] = "Invalid IP Address"
+            _LOGGER.warning("Failed IP validation")
+            errors["ip_address"] = "Invalid IP address"
             return self.async_show_form(
-                step_id="user", data_schema=vol.Schema(data_schema), errors=errors
+                step_id="user",
+                data_schema=vol.Schema(data_schema),
+                errors=errors,
             )
 
-        _LOGGER.info("Create entry")
+        data = {"ip_address": ip_address, "ip_port": ip_port}
+        _LOGGER.info("Create entry with data", extra=(data))
 
-        return self.async_create_entry(title="CHIPPA", data={"ip_address": ip_address})
+        return self.async_create_entry(title="CHIPPA", data=data)

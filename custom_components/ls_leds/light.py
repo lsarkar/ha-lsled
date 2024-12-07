@@ -5,47 +5,40 @@ from __future__ import annotations
 from datetime import timedelta
 from enum import IntEnum
 import logging
-from typing import Any, Dict
+from typing import Any
 
-import voluptuous as vol
-
-from homeassistant.components.light import (
-    ATTR_RGB_COLOR,
-    PLATFORM_SCHEMA,
-    ColorMode,
-    LightEntity,
-)
+from homeassistant.components.light import ATTR_RGB_COLOR, ColorMode, LightEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, STATE_OFF, STATE_ON
+from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant
-import homeassistant.helpers.config_validation as cv
 
-from .const import CONF_PORT, DEFAULT_PORT, DOMAIN
 from .udp import UdpHandler
 
 _LOGGER = logging.getLogger(__name__)
 
-# Validation of the user's configuration
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Required(CONF_HOST, default="192.168.4.120"): cv.string,
-        vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.positive_int,
-    }
-)
 
+async def async_setup_entry(
+    hass: HomeAssistant, config: ConfigEntry, async_add_entities
+):
+    # add all chipha light entities
+    udp_ip_address = config.data["ip_address"]
+    udp_ip_port = config.data["ip_port"]
+    _LOGGER.info(udp_ip_address)
+    _LOGGER.info(udp_ip_port)
 
-def rgb(red: int, green: int, blue: int) -> str:
-    rgb_packet = []
-    rgb_packet.append(red)
-    rgb_packet.append(green)
-    rgb_packet.append(blue)
-    rgb_packet.append(0)
+    lower = LightStrip(
+        Ws281XLedStrip(
+            udp_ip_address, udp_ip_port, strip_index=Ws281XLedStrip.StripIndex.LOWER
+        )
+    )
+    upper = LightStrip(
+        Ws281XLedStrip(
+            udp_ip_address, udp_ip_port, strip_index=Ws281XLedStrip.StripIndex.UPPER
+        )
+    )
 
-    return bytearray(rgb_packet)
+    async_add_entities([lower, upper])
 
-
-UDP_IP = "192.168.4.120"
-UDP_PORT = DEFAULT_PORT
 
 SCAN_INTERVAL = timedelta(minutes=10)
 
@@ -69,20 +62,11 @@ class Ws281XLedStrip:
         self._strip_index = strip_index
         self._unique_id = f"ledstrip-{udp_ip}:{udp_port}-{self._strip_index}"
         self._color = self.rgb_byte_array(127, 127, 127)
-        self._is_on = True
-
-    def turn_on(self):
-        self._is_on = True
-        self._send(self._color)
+        self._is_on = False
 
     async def async_turn_on(self):
         self._is_on = True
         await self._send_async(self._color)
-
-    def turn_off(self):
-        self._color = self.rgb_byte_array(0, 0, 0)
-        self._is_on = False
-        self._send(self._color)
 
     async def async_turn_off(self):
         self._is_on = False
@@ -113,6 +97,7 @@ class Ws281XLedStrip:
         return self._unique_id
 
     def rgb_byte_array(self, red: int, green: int, blue: int) -> str:
+        """Construct an rgb byte array."""
         rgb_packet = []
         rgb_packet.append(red)
         rgb_packet.append(green)
@@ -124,23 +109,6 @@ class Ws281XLedStrip:
     @property
     def name(self) -> str:
         return f"chipha-led-strip-{self._strip_index}"
-
-
-async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
-):
-    # add all chipha light entities
-    lower = LightStrip(
-        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.LOWER)
-    )
-    upper = LightStrip(
-        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.UPPER)
-    )
-
-    async_add_entities([lower, upper])
-
-
-ATTR_IP = "IP"
 
 
 # https://developers.home-assistant.io/docs/integration_fetching_data
@@ -161,7 +129,7 @@ class LightStrip(LightEntity):
         self.color_mode = ColorMode.RGB
         self._rgb_color = None
         self._icon = "mdi:lightbulb"
-        self.attrs: dict[str, Any] = {ATTR_IP, self._light.ip()}
+        self.attrs: dict[str, Any] = {"IP": self._light.ip(), "ID": self._unique_id}
 
     @property
     def name(self) -> str:
@@ -187,21 +155,16 @@ class LightStrip(LightEntity):
         """Return the supported color mode."""
         return ColorMode.RGB
 
-    # @property
-    # def is_on(self) -> bool | None:
-    #    """Return true if light is on."""
-    #    return self._state
-
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Instruct the light to turn on."""
-        _LOGGER.info("turn on light")
         self._state = STATE_ON
-        _rgb = kwargs.get(ATTR_RGB_COLOR)
-        self._rgb_color = _rgb
+        self._rgb_color = kwargs.get(ATTR_RGB_COLOR)
         self._brightness = kwargs.get("brightness", 255)
 
         if self._rgb_color is None:
             self._rgb_color = self.DEFAULT_ON_COLOR
+
+        _LOGGER.info("Turn on light")
 
         self._light.set_rgb(self._rgb_color[0], self._rgb_color[1], self._rgb_color[2])
         await self._light.async_turn_on()
@@ -212,15 +175,6 @@ class LightStrip(LightEntity):
         self._brightness = 0
         self._rgb_color = (0, 0, 0)
         await self._light.async_turn_off()
-
-    """
-    def turn_off(self, **kwargs: Any) -> None:
-        #Instruct the light to turn off.
-        self._state = STATE_OFF
-        self._brightness = 0
-        self._rgb_color = (0, 0, 0)
-        self._light.turn_off()
-    """
 
     @property
     def supported_color_modes(self):
@@ -243,7 +197,7 @@ class LightStrip(LightEntity):
     @property
     def extra_state_attributes(self):
         """Return the custom attributes of the light."""
-        return {"identifier": self._light.ip()}
+        return self.attrs
 
     @property
     def is_on(self) -> bool | None:
@@ -259,6 +213,7 @@ class LightStrip(LightEntity):
 
     @property
     def unique_id(self):
+        """Return a unique id for this light."""
         return self._unique_id
 
     async def async_update(self) -> None:

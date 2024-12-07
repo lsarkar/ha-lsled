@@ -49,9 +49,9 @@ class UdpHandler:
 
     @staticmethod
     def validate_ip(ip: str):
-        if UdpHandler.validate_ipv4(ip):
-            return True
-        elif UdpHandler.validate_ipv6(ip):
-            return True
-        else:
+        if ip is None:
             return False
+
+        if UdpHandler.validate_ipv4(ip) or UdpHandler.validate_ipv6(ip):
+            return True
+        return False

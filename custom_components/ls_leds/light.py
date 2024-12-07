@@ -2,33 +2,26 @@
 
 from __future__ import annotations
 
-import logging
 from datetime import timedelta
+from enum import IntEnum
+import logging
 from typing import Any, Dict
 
 import voluptuous as vol
 
-import homeassistant.helpers.config_validation as cv
 from homeassistant.components.light import (
     ATTR_RGB_COLOR,
     PLATFORM_SCHEMA,
     ColorMode,
     LightEntity,
 )
-from homeassistant.const import CONF_HOST
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_ON, STATE_OFF
-from homeassistant.components.light import SUPPORT_COLOR
+from homeassistant.const import CONF_HOST, STATE_OFF, STATE_ON
+from homeassistant.core import HomeAssistant
+import homeassistant.helpers.config_validation as cv
 
-from enum import IntEnum
-
-from .const import DOMAIN
-from .const import CONF_PORT, DEFAULT_PORT
+from .const import CONF_PORT, DEFAULT_PORT, DOMAIN
 from .udp import UdpHandler
-
-import binascii
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,8 +41,7 @@ def rgb(red: int, green: int, blue: int) -> str:
     rgb_packet.append(blue)
     rgb_packet.append(0)
 
-    res = binascii.hexlify(bytearray(rgb_packet))
-    return binascii.unhexlify(res)
+    return bytearray(rgb_packet)
 
 
 UDP_IP = "192.168.4.120"
@@ -127,9 +119,7 @@ class Ws281XLedStrip:
         rgb_packet.append(blue)
         rgb_packet.append(self._strip_index)
 
-        res = binascii.hexlify(bytearray(rgb_packet))
-
-        return binascii.unhexlify(res)
+        return bytearray(rgb_packet)
 
     @property
     def name(self) -> str:

@@ -3,11 +3,10 @@
     "name": "CHIPHA",
     "codeowners": [],
     "config_flow": true,
-    "single_config_entry": false,
     "dependencies": [],
     "integration_type": "hub",
     "documentation": "https://github.com/lsarkar/ha-lsled",
     "iot_class": "local_polling",
     "issue_tracker": "https://github.com/lsarkar/ha-lsled/issues",
     "requirements": [],
-    "version": "0.2.1"  }
+    "version": "0.2.2"  }

@@ -5,13 +5,12 @@ from __future__ import annotations
 from datetime import timedelta
 from enum import IntEnum
 import logging
-from typing import Any, Dict
+from typing import Any
 
 import voluptuous as vol
 
 from homeassistant.components.light import (
     ATTR_RGB_COLOR,
-    PLATFORM_SCHEMA,
     ColorMode,
     LightEntity,
 )
@@ -25,13 +24,28 @@ from .udp import UdpHandler
 
 _LOGGER = logging.getLogger(__name__)
 
-# Validation of the user's configuration
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Required(CONF_HOST, default="192.168.4.120"): cv.string,
-        vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.positive_int,
-    }
-)
+
+async def async_setup_entry(
+    hass: HomeAssistant, config: ConfigEntry, async_add_entities
+):
+    # add all chipha light entities
+    udp_ip_address = config.data["ip_address"]
+    udp_ip_port = config.data["ip_port"]
+    _LOGGER.info(udp_ip_address)
+    _LOGGER.info(udp_ip_port)
+
+    lower = LightStrip(
+        Ws281XLedStrip(
+            udp_ip_address, udp_ip_port, strip_index=Ws281XLedStrip.StripIndex.LOWER
+        )
+    )
+    upper = LightStrip(
+        Ws281XLedStrip(
+            udp_ip_address, udp_ip_port, strip_index=Ws281XLedStrip.StripIndex.UPPER
+        )
+    )
+
+    async_add_entities([lower, upper])
 
 
 def rgb(red: int, green: int, blue: int) -> str:
@@ -43,9 +57,6 @@ def rgb(red: int, green: int, blue: int) -> str:
 
     return bytearray(rgb_packet)
 
-
-UDP_IP = "192.168.4.120"
-UDP_PORT = DEFAULT_PORT
 
 SCAN_INTERVAL = timedelta(minutes=10)
 
@@ -126,20 +137,6 @@ class Ws281XLedStrip:
         return f"chipha-led-strip-{self._strip_index}"
 
 
-async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
-):
-    # add all chipha light entities
-    lower = LightStrip(
-        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.LOWER)
-    )
-    upper = LightStrip(
-        Ws281XLedStrip(UDP_IP, UDP_PORT, strip_index=Ws281XLedStrip.StripIndex.UPPER)
-    )
-
-    async_add_entities([lower, upper])
-
-
 ATTR_IP = "IP"
 
 
@@ -194,7 +191,7 @@ class LightStrip(LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Instruct the light to turn on."""
-        _LOGGER.info("turn on light")
+        _LOGGER.info("Turn on light")
         self._state = STATE_ON
         _rgb = kwargs.get(ATTR_RGB_COLOR)
         self._rgb_color = _rgb
@@ -212,15 +209,6 @@ class LightStrip(LightEntity):
         self._brightness = 0
         self._rgb_color = (0, 0, 0)
         await self._light.async_turn_off()
-
-    """
-    def turn_off(self, **kwargs: Any) -> None:
-        #Instruct the light to turn off.
-        self._state = STATE_OFF
-        self._brightness = 0
-        self._rgb_color = (0, 0, 0)
-        self._light.turn_off()
-    """
 
     @property
     def supported_color_modes(self):
@@ -259,6 +247,7 @@ class LightStrip(LightEntity):
 
     @property
     def unique_id(self):
+        """Return a unique id for this light."""
         return self._unique_id
 
     async def async_update(self) -> None:

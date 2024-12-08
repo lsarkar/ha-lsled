@@ -2,6 +2,8 @@ name: Validate with hassfest
 
 on:
   push:
+    branches:
+      - main
   pull_request:
   schedule:
     - cron:  '0 0 * * *'
@@ -18,6 +20,7 @@ jobs:
         uses: "hacs/action@22.5.0"
         with:
           category: "integration"
+          ignore: "brands"
   validate:
     runs-on: "ubuntu-latest"
     steps:

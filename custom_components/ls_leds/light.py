@@ -13,6 +13,7 @@ from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant
 
 from .udp import UdpHandler
+from .datapacket import DataPacket
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -98,13 +99,7 @@ class Ws281XLedStrip:
 
     def rgb_byte_array(self, red: int, green: int, blue: int) -> str:
         """Construct an rgb byte array."""
-        rgb_packet = []
-        rgb_packet.append(red)
-        rgb_packet.append(green)
-        rgb_packet.append(blue)
-        rgb_packet.append(self._strip_index)
-
-        return bytearray(rgb_packet)
+        return DataPacket.construct_rgb(red, green, blue, self._strip_index)
 
     @property
     def name(self) -> str:

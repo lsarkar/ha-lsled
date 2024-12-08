@@ -8,9 +8,8 @@ class ReadCommand:
 
 
 class DataPacket:
-    """
-    payload:
-        packet:
+    """payload:
+    packet:
             8 bits red
             8 bits green
             8 bits blue
@@ -21,8 +20,8 @@ class DataPacket:
             4 bits strip id
                 0x0 strip id 0
                 0x1 strip id 1
-                0xF strip id 2 (ALL) (deprecated)
-    """
+                0xF strip id 2 (ALL) (deprecated).
+    """  # noqa: D205
 
     def __init__(self, raw_input):
         self.raw_input = raw_input
@@ -52,3 +51,14 @@ class DataPacket:
 
     def invert_color(self):
         return (255 - self._r, 255 - self._g, 255 - self._b)
+    
+    @staticmethod
+    def construct_rgb(red: int, green: int, blue: int, strip_index: int) -> str:
+        """Construct an rgb byte array."""
+        rgb_packet = []
+        rgb_packet.append(red)
+        rgb_packet.append(green)
+        rgb_packet.append(blue)
+        rgb_packet.append(strip_index)
+
+        return bytearray(rgb_packet)

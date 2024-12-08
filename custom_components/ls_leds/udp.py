@@ -1,6 +1,6 @@
-import socket
-import re
 import asyncio
+import re
+import socket
 
 
 class UdpHandler:
@@ -9,10 +9,11 @@ class UdpHandler:
         self._port = udp_port
 
     def send(self, message: str) -> None:
+        """Send udp command. Deprecated, use send_async instead."""
         sock = socket.socket(
-            socket.AF_INET,  # Internet
+            socket.AF_INET,
             socket.SOCK_DGRAM,
-        )  # UDP
+        )
 
         print(f"UDP target {self._ip}:{self._port}")
         print("message: %s" % message)

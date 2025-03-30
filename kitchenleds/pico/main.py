@@ -1,7 +1,6 @@
 from machine import Pin
 import time
 from secrets import secrets
-#from neopixel import Neopixel
 
 from leds.pico_led import PicoLedStrip
 from led_config import LedConfig
@@ -18,12 +17,9 @@ import socket
  *  - 88 TOTAL
  *  
  *  TOP SECTION
- *  95 (top right and top center)
- *  approx 70 top left
- *  approx 165 total (old)
- 
- *  update added 80 LEDS
- *  TOTAL = 165 + 80
+ *  - 165
+ *  - 80
+ *  TOTAL = 245
  
 """
 
@@ -32,14 +28,14 @@ PORT = 2522
 led_upper = LedConfig()
 led_upper.name = "upper strip"
 led_upper.strip_id = 0x01
-led_upper.num_leds = 245
+led_upper.num_leds = 4
 led_upper.state_machine = 0
 led_upper.pin = 28
 
 led_lower = LedConfig()
 led_upper.name = "lower strip"
 led_lower.strip_id = 0x02
-led_lower.num_leds = 88
+led_lower.num_leds = 4
 led_lower.state_machine = 1
 led_lower.pin = 27
 
@@ -69,7 +65,7 @@ def led_start_up_sequence():
     upper_strip.write_all(255, 0, 0)
     lower_strip.write_all(255, 0, 0)
     time.sleep(0.5)
-    upper_strip.write_all(0, 0, 255)
+    upper_strip.write_all(0, 255, 0)
     lower_strip.write_all(0, 255, 0)
     time.sleep(0.5)
     upper_strip.write_all(0, 0, 255)
@@ -154,8 +150,8 @@ class DataPacket:
                 0x2 ID Command - TBD
             4 bits strip id
                 0x0 strip id 0
-                0x1 strip id 1
-                0xF strip id 2 (ALL) (deprecated)
+                0x1 strip id 1 (upper)
+                0xF strip id 2 (lower)
     """
     
     def __init__(self, raw_input):
